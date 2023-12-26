@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Mapa com Marcadores</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .input-container {
+            position: absolute;
+            z-index: 1000;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .input-container.left {
+            display: block;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: -20px;
+        }
+
+        .input-container.right {
+            top: 0px;
+            right: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .input-container textarea {
+            margin-bottom: 5px;
+            width: 300px;
+            height: 200px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #000;
+        }
+
+        .btn {
+            width: 200px;
+            height: 50px;
+            font-weight: bold;
+            font-size: 30px;
+            border: none;
+            border-radius: 1000px;
+            color: #000;
+            transition: all 0.6s ease-in-out 0s;
+            box-shadow: inset 0 0 20px #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(to bottom, rgba(0, 255, 203, 0.2), rgba(0, 255, 203, 0.1));
+            transform: rotate(45deg);
+            transition: all 0.6s ease-in-out 0s;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .btn:hover {
+            background: transparent;
+            color: #00ffcb;
+            transform: scale(1.1) rotate(360deg);
+            box-shadow: 0 0 60px rgba(0, 255, 203, 0.64);
+            cursor: grab;
+            border: none;
+        }
+
+        .btn:hover::before {
+            top: -10%;
+            left: -10%;
+            opacity: 1;
+        }
+
+        /* Adicione estas regras para o botão Adicionar Marcadores */
+        #add-markers-button {
+            padding: 10px 20px;
+            font-size: 10px;
+            background-color: rgba(0, 0, 0, 0.4);
+            /* Cor preta transparente */
+            color: #ffffff;
+            /* Cor do texto */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            /* Adiciona uma transição suave na mudança de cor de fundo */
+            width: 180px;
+            /* Ajuste o tamanho desejado */
+            height: 30px;
+            /* Ajuste o tamanho desejado */
+            margin: 4px 0;
+            /* Adicione margem entre os botões */
+        }
+
+        #add-markers-button:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+            /* Cor preta mais escura ao passar o mouse */
+        }
+
+        /* Adicione estas regras para o botão Ocultar */
+        #toggle-textbox-button {
+            padding: 10px 20px;
+            font-size: 12px;
+            background-color: #ff4b2b;
+            /* Cor de fundo do botão */
+            color: #ffffff;
+            /* Cor do texto */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            /* Adiciona uma transição suave na mudança de cor de fundo */
+            width: 100px;
+            /* Ajuste o tamanho desejado */
+            height: 30px;
+            /* Ajuste o tamanho desejado */
+            margin: 5px 0;
+            /* Adicione margem entre os botões */
+        }
+
+        #toggle-textbox-button:hover {
+            background-color: #d62915;
+            /* Cor de fundo do botão ao passar o mouse */
+        }
+
+        /* Adicione estas regras para o botão Adicionar Marcadores 2 */
+        #add-markers-button2 {
+            padding: 10px 20px;
+            font-size: 10px;
+            background-color: rgba(0, 0, 0, 0.4);
+            /* Cor preta transparente */
+            color: #ffffff;
+            /* Cor do texto */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            /* Adiciona uma transição suave na mudança de cor de fundo */
+            width: 180px;
+            /* Ajuste o tamanho desejado */
+            height: 30px;
+            /* Ajuste o tamanho desejado */
+            margin: 4px 0;
+            /* Adicione margem entre os botões */
+        }
+
+        #add-markers-button2:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+            /* Cor preta mais escura ao passar o mouse */
+        }
+
+        /* Adicione estas regras para o botão Ocultar 2 */
+        #toggle-textbox-button2 {
+            padding: 10px 20px;
+            font-size: 12px;
+            background-color: #ff4b2b;
+            /* Cor de fundo do botão */
+            color: #ffffff;
+            /* Cor do texto */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.6s ease;
+            /* Adiciona uma transição suave na mudança de cor de fundo */
+            width: 100px;
+            /* Ajuste o tamanho desejado */
+            height: 30px;
+            /* Ajuste o tamanho desejado */
+            margin: 5px 0;
+            /* Adicione margem entre os botões */
+        }
+
+        #toggle-textbox-button2:hover {
+            background-color: #d62915;
+            /* Cor de fundo do botão ao passar o mouse */
+        }
+
+        /* Estilo personalizado para remover a sombra do marcador */
+        .leaflet-marker-shadow {
+            display: none !important;
+        }
+
+        @keyframes blink-animation {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .blink {
+            animation: blink-animation 1s infinite;
+        }
+
+        /* New styles for marker counters */
+        .marker-counter-box {
+            background-color: white;
+            border: 1px solid black;
+            padding: 5px;
+            border-radius: 5px;
+            margin: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .marker-counter {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .truck-counter-box,
+        .supplier-counter-box {
+            background: rgba(0, 0, 0, 0.5);
+            /* Adicione esta linha para um fundo transparente com tom escuro */
+            border: 1px solid black;
+            padding: 5px;
+            border-radius: 5px;
+            margin: 5px;
+            display: flex;
+            align-items: center;
+            color: white;
+            /* Adicione esta linha para garantir que o texto seja visível no fundo escuro */
+        }
+
+        .truck-counter,
+        .supplier-counter {
+            color: white;
+            /* Adicione esta linha para garantir que o texto seja visível no fundo escuro */
+        }
+
+        .truck-counter-text,
+        .supplier-counter-text {
+            margin-left: 5px;
+            font-weight: normal;
+        }
+
+        /* Adicionado para mover os botões abaixo da caixa de inserção de coordenadas */
+        .button-container-below-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        /* Adiciona estilo para o tooltip */
+        .marker-tooltip {
+            background: none;
+            border: none;
+            box-shadow: none;
+            white-space: nowrap;
+            /* Impede que o texto quebre em várias linhas */
+        }
+
+        /* Estilo personalizado para os rótulos dos marcadores */
+        .leaflet-tooltip-content {
+            font-weight: bold;
+            /* Adiciona negrito ao texto do tooltip */
+        }
+
+        /* Remove a seta do tooltip dos marcadores */
+        .leaflet-tooltip-top::before,
+        .leaflet-tooltip-bottom::before,
+        .leaflet-tooltip-right::before,
+        .leaflet-tooltip-left::before {
+            display: none !important;
+        }
+
+        /* Estilo adicional para destacar o texto do tooltip */
+        /* Estilo adicional para destacar o texto do tooltip */
+        .leaflet-tooltip {
+            font-weight: bold;
+            /* Torna o texto em negrito */
+            color: #000;
+            /* Cor do texto (pode ajustar para outra cor que destaque no seu mapa) */
+            font-size: 12px;
+            /* Ajusta o tamanho da fonte conforme necessário */
+            font-family: 'Calibri', sans-serif;
+            /* Define a fonte como Arial Black e, se não disponível, usa uma fonte sans-serif genérica */
+            white-space: nowrap;
+            /* Evita a quebra de linha no tooltip */
+        }
+
+        #toggle-labels-button {
+            position: fixed;
+            bottom: 20px;
+            /* Ajuste a posição vertical conforme necessário */
+            right: 20px;
+            background-color: #ff4b2b;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            z-index: 1000;
+        }
+
+        #toggle-labels-button:hover {
+            background-color: #d62915;
+
+
+        }
+    </style>
+</head>
+
+
+<body>
+    <div class="input-container left" style="display: none;">
+        <h2>CAMINHÕES</h2>
+        <label for="coordinates-input"></label>
+        <textarea id="coordinates-input"
+            placeholder="Insira as coordenadas (placa, nome, latitude, longitude) uma por linha"></textarea>
+        <div class="button-container-below-input">
+            <button id="add-markers-button">ADICIONAR MARCADORES</button>
+            <button id="toggle-textbox-button">OCULTAR</button>
+        </div>
+    </div>
+    <button id="toggle-labels-button">RÓTULOS</button>
+    <div class="input-container right" style="display: none;">
+        <h2>FORNECEDORES</h2>
+        <label for="coordinates-input2"></label>
+        <textarea id="coordinates-input2"
+            placeholder="Insira as coordenadas (nome, latitude, longitude) uma por linha"></textarea>
+        <div class="button-container-below-input">
+            <button id="add-markers-button2">ADICIONAR MARCADORES</button>
+            <button id="toggle-textbox-button2">OCULTAR</button>
+        </div>
+    </div>
+    <div class="button-container">
+        <button id="go-to-map-button" class="btn">LOGISTICA</button>
+    </div>
+    <div id="map"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script>
+        function initMap() {
+            const map = L.map('map').setView([-14.2350, -51.9253], 4);
+            let truckCounter = 0;
+            let supplierCounter = 0;
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+                maxZoom: 18
+            }).addTo(map);
+
+            const redIcon = L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/128/4529/4529118.png',
+                iconSize: [32, 37],
+                iconAnchor: [16, 37],
+                popupAnchor: [0, -28]
+            });
+
+            const blueIcon = L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/128/3138/3138736.png',
+                iconSize: [32, 37],
+                iconAnchor: [16, 37],
+                popupAnchor: [0, -28]
+            });
+
+            const marker = L.marker([-22.69381993636283, -46.72657376951247]).addTo(map);
+            marker.setIcon(createBlinkingIcon());
+
+            function createBlinkingIcon() {
+                return L.icon({
+                    iconUrl: 'https://cdn-icons-png.flaticon.com/128/8142/8142828.png',
+                    iconSize: [32, 32],
+                    className: 'blink'
+                });
+            }
+
+            // Marker counters
+            const truckCounterControl = L.control({position: 'bottomleft'});
+            const supplierCounterControl = L.control({position: 'bottomleft'});
+
+            truckCounterControl.onAdd = function (map) {
+                const div = L.DomUtil.create('div', 'marker-counter-box truck-counter-box');
+                div.innerHTML = '<div class="truck-counter"><span class="truck-counter-text">CAMINHÕES:</span> <span class="truck-counter-number">0</span></div>';
+                return div;
+            };
+
+            supplierCounterControl.onAdd = function (map) {
+                const div = L.DomUtil.create('div', 'marker-counter-box supplier-counter-box');
+                div.innerHTML = '<div class="supplier-counter"><span class="supplier-counter-text">COLETA APARAS:</span> <span class="supplier-counter-number">0</span></div>';
+                return div;
+            };
+
+
+            truckCounterControl.addTo(map);
+            supplierCounterControl.addTo(map);
+
+            function updateMarkerCounters() {
+                document.querySelector('.truck-counter-number').textContent = truckCounter;
+                document.querySelector('.supplier-counter-number').textContent = supplierCounter;
+            }
+
+            const addMarkersButton = document.getElementById('add-markers-button');
+            const toggleTextboxButton = document.getElementById('toggle-textbox-button');
+            const addMarkersButton2 = document.getElementById('add-markers-button2');
+            const toggleTextboxButton2 = document.getElementById('toggle-textbox-button2');
+            const inputContainer = document.querySelector('.input-container.left');
+            const inputContainer2 = document.querySelector('.input-container.right');
+
+            addMarkersButton.addEventListener('click', () => {
+                const coordinatesInput = document.getElementById('coordinates-input');
+                const coordinates = coordinatesInput.value.split('\n');
+
+                coordinates.forEach((coordinate) => {
+                    const [name, latitude, longitude] = coordinate.split(',');
+                    const marker = L.marker([parseFloat(latitude), parseFloat(longitude)], {icon: redIcon})
+                        .addTo(map)
+                        .bindPopup(`<b>${name}</b><br>Latitude: ${latitude}<br>Longitude: ${longitude}`)
+                        .openPopup(); // Adiciona o rótulo (popup) com o nome
+
+                    // Adicione as linhas abaixo para exibir apenas o texto como rótulo do marcador
+                    marker.bindTooltip(name, {
+                        permanent: true,
+                        direction: 'right',
+                        className: 'marker-tooltip' // Adiciona uma classe para estilizar o tooltip
+                    }).openTooltip();
+
+                    truckCounter++;
+                    updateMarkerCounters();
+                });
+
+                coordinatesInput.value = '';
+            });
+
+            toggleTextboxButton.addEventListener('click', () => {
+                if (inputContainer.style.display === 'none') {
+                    inputContainer.style.display = 'block';
+                    toggleTextboxButton.innerText = 'Ocultar';
+                } else {
+                    inputContainer.style.display = 'none';
+                    toggleTextboxButton.innerText = 'Mostrar';
+                }
+            });
+
+            // ...
+
+            addMarkersButton2.addEventListener('click', () => {
+                const coordinatesInput2 = document.getElementById('coordinates-input2');
+                const coordinates2 = coordinatesInput2.value.split('\n');
+
+                coordinates2.forEach((coordinate) => {
+                    const [name, latitude, longitude] = coordinate.split(',');
+                    const marker = L.marker([parseFloat(latitude), parseFloat(longitude)], {icon: blueIcon})
+                        .addTo(map)
+                        .bindPopup(`<b>${name}</b><br>Latitude: ${latitude}<br>Longitude: ${longitude}`)
+                        .openPopup(); // Adiciona o rótulo (popup) com o nome
+
+                    // Adicione as linhas abaixo para exibir apenas o texto como rótulo do marcador
+                    marker.bindTooltip(name, {
+                        permanent: true,
+                        direction: 'right',
+                        className: 'marker-tooltip' // Adiciona uma classe para estilizar o tooltip
+                    }).openTooltip();
+
+                    supplierCounter++;
+                    updateMarkerCounters();
+                });
+
+                coordinatesInput2.value = '';
+            });
+
+            // ...
+
+            toggleTextboxButton2.addEventListener('click', () => {
+                if (inputContainer2.style.display === 'none') {
+                    inputContainer2.style.display = 'block';
+                    toggleTextboxButton2.innerText = 'Ocultar';
+                } else {
+                    inputContainer2.style.display = 'none';
+                    toggleTextboxButton2.innerText = 'Mostrar';
+                }
+            });
+
+            const goToMapButton = document.getElementById('go-to-map-button');
+            goToMapButton.addEventListener('click', () => {
+                document.querySelector('.button-container').style.display = 'none';
+                inputContainer.style.display = 'block';
+                toggleTextboxButton.innerText = 'Ocultar';
+                inputContainer2.style.display = 'block';
+                toggleTextboxButton2.innerText = 'Ocultar';
+                map.invalidateSize();
+            });
+
+            const toggleLabelsButton = document.getElementById('toggle-labels-button');
+            let labelsEnabled = true;
+
+            toggleLabelsButton.addEventListener('click', () => {
+                const allMarkers = map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        if (labelsEnabled) {
+                            layer.closeTooltip(); // Fecha os rótulos
+                        } else {
+                            layer.openTooltip(); // Abre os rótulos
+                        }
+                    }
+                });
+
+                labelsEnabled = !labelsEnabled; // Inverte o estado
+            });
+        }
+
+        // Inicializar o mapa quando a página carregar
+        window.addEventListener('load', () => {
+            initMap();
+        });
+    </script>
+</body>
+
+</html>
